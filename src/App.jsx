@@ -1,10 +1,28 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars, faTimes, faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faBars, 
+  faTimes, 
+  faArrowRight, 
+  faClock,
+  faBell,
+  faChartLine,
+  faTruck,
+  faRobot,
+  faUtensils,
+  faCloudUpload,
+  faShoppingCart,
+  faInfinity,
+  faUsers,
+  faGem,
+  faHeadset,
+  faChartSimple,
+  faLocationDot,
+  faUserTie
+} from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import * as THREE from 'three';
-// import logoImg from "/images/brand size-05.png";
 import "./App.css";
 
 const fadeUp = {
@@ -274,14 +292,14 @@ const App = () => {
 
   const featuresList = [
     { icon: faWhatsapp, title: 'WhatsApp Native', description: 'Works directly with your WhatsApp Business account' },
-    { icon: faArrowRight, title: 'Auto Responses', description: 'Instant replies to customer orders 24/7' },
-    { icon: faWhatsapp, title: 'Order Tracking', description: 'Real-time order status updates' },
+    { icon: faRobot, title: 'AI Automation', description: 'Smart order parsing and confirmation' },
+    { icon: faChartLine, title: 'Analytics', description: 'Track sales, orders and peak hours' },
   ];
 
   const stepsData = [
-    { number: '01', title: 'Connect WhatsApp', description: 'Link your WhatsApp Business account', icon: faWhatsapp },
-    { number: '02', title: 'Set Menu', description: 'Upload your menu items and prices', icon: faArrowRight },
-    { number: '03', title: 'Start Selling', description: 'Customers order automatically', icon: faWhatsapp },
+    { number: '01', title: 'Connect WhatsApp', description: 'Link your WhatsApp Business account in minutes', icon: faWhatsapp },
+    { number: '02', title: 'Upload Menu', description: 'Add your menu items, prices and categories', icon: faCloudUpload },
+    { number: '03', title: 'Start Selling', description: 'Customers order automatically 24/7', icon: faShoppingCart },
   ];
 
   return (
@@ -300,7 +318,6 @@ const App = () => {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
-              {/* <motion.img src={logoImg} alt="Servra" className="lp-preloader__logo" /> */}
               <motion.p
                 className="lp-preloader__version"
                 initial={{ opacity: 0 }}
@@ -480,7 +497,8 @@ const App = () => {
           >
             <div className="lp-phone-frame">
               <div style={{ width: '100%', height: '500px', background: '#1a1a1a', borderRadius: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                Phone Mock Preview
+                <FontAwesomeIcon icon={faWhatsapp} size="3x" style={{ marginRight: '10px' }} />
+                <span>Phone Mock Preview</span>
               </div>
             </div>
           </motion.div>
@@ -492,10 +510,10 @@ const App = () => {
           <RevealSection className="lp-about__visual">
             <div className="lp-about__cards-stack">
               {[
-                { icon: 'clock', title: '24/7 automated ordering', sub: 'Takes orders while you sleep' },
-                { icon: 'bell', title: 'Instant order alerts', sub: 'Notified every new sale' },
-                { icon: 'chart', title: 'Sales analytics', sub: 'Revenue, orders & peak hours' },
-                { icon: 'truck', title: 'Delivery tracking', sub: 'Keep customers updated' },
+                { icon: faClock, title: '24/7 automated ordering', sub: 'Takes orders while you sleep' },
+                { icon: faBell, title: 'Instant order alerts', sub: 'Notified every new sale' },
+                { icon: faChartLine, title: 'Sales analytics', sub: 'Revenue, orders & peak hours' },
+                { icon: faTruck, title: 'Delivery tracking', sub: 'Keep customers updated' },
               ].map((item, i) => (
                 <motion.div
                   key={i}
@@ -504,9 +522,7 @@ const App = () => {
                   transition={{ duration: 0.2 }}
                 >
                   <div className="lp-about__card-icon">
-                    <span className="lp-about__card-emoji">
-                      {['⏰', '🔔', '📊', '🚚'][i]}
-                    </span>
+                    <FontAwesomeIcon icon={item.icon} />
                   </div>
                   <div>
                     <p className="lp-about__card-title">{item.title}</p>
