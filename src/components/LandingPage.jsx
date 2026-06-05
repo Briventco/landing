@@ -18,7 +18,7 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import * as THREE from 'three';
 import { useWhatsAppChat } from '../hooks/useWhatsAppChat';
 import { useTheme } from '../contexts/ThemeContext';
-import PhoneMock from '../ui/PhoneMock';
+import PhoneMock from '../ui/phoneMock.jsx';
 import Footer from './Footer';
 import { navItems, stepsData, featuresList, statsData } from '../data/landingPageData.js';
 import logoImg from '/images/logo.jpg';
