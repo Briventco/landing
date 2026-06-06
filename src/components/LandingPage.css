@@ -469,6 +469,7 @@ html, body, #root {
   place-items: center;
   font-size: 18px;
   flex-shrink: 0;
+  color: #25D366;
 }
 
 .lp-about__card-title {
