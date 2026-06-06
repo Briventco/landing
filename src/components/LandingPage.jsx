@@ -1,27 +1,35 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faBars, 
-  faTimes, 
-  faArrowRight, 
+import {
+  faBars,
+  faTimes,
+  faArrowRight,
   faClock,
   faBell,
   faChartLine,
   faTruck,
-  faRobot,
-  faCloudUpload,
-  faShoppingCart
+  faPlus,
+  faMinus,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
-import { motion, AnimatePresence, useInView } from 'framer-motion';
+import { motion, AnimatePresence, useInView, useScroll, useTransform } from 'framer-motion';
 import * as THREE from 'three';
 import { useWhatsAppChat } from '../hooks/useWhatsAppChat';
 import { useTheme } from '../contexts/ThemeContext';
 import PhoneMock from '../ui/phoneMock.jsx';
 import Footer from './Footer';
-import { navItems, stepsData, featuresList, statsData } from '../data/landingPageData.js';
+import {
+  navItems,
+  stepsData,
+  featuresList,
+  statsData,
+  faqData,
+  marqueeItems,
+  toastMessages,
+} from '../data/landingPageData.js';
 import logoImg from '/images/logo.jpg';
+import brandImg from '/images/brand.jpg';
 import './LandingPage.css';
 
 const fadeUp = {
@@ -201,18 +209,273 @@ const MoonIcon = () => (
   </svg>
 );
 
+const MarqueeStrip = () => {
+  const items = [...marqueeItems, ...marqueeItems];
+  return (
+    <div className="lp-marquee">
+      <div className="lp-marquee__track">
+        {items.map((item, i) => (
+          <span key={i} className="lp-marquee__item">
+            <span className="lp-marquee__dot" />
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const TiltCard = ({ children, className, style }) => {
+  const cardRef = useRef(null);
+
+  const handleMouseMove = (e) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -6;
+    const rotateY = ((x - centerX) / centerX) * 6;
+    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-6px)`;
+  };
+
+  const handleMouseLeave = () => {
+    const card = cardRef.current;
+    if (!card) return;
+    card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      className={className}
+      style={{ ...style, transition: 'transform 0.25s ease', willChange: 'transform' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+    </div>
+  );
+};
+
+const CounterStat = ({ value, label }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  const [display, setDisplay] = useState('0');
+
+  useEffect(() => {
+    if (!inView) return;
+    const hasNumber = value.match(/\d+/);
+    if (!hasNumber) { setDisplay(value); return; }
+    const num = parseInt(hasNumber[0]);
+    const prefix = value.slice(0, hasNumber.index);
+    const suffix = value.slice(hasNumber.index + hasNumber[0].length);
+    let start = 0;
+    const duration = 1800;
+    const step = 16;
+    const increment = num / (duration / step);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= num) {
+        setDisplay(`${prefix}${num}${suffix}`);
+        clearInterval(timer);
+      } else {
+        setDisplay(`${prefix}${Math.floor(start)}${suffix}`);
+      }
+    }, step);
+    return () => clearInterval(timer);
+  }, [inView, value]);
+
+  return (
+    <div ref={ref} className="lp-stats__item">
+      <p className="lp-stats__value">{display}</p>
+      <p className="lp-stats__label">{label}</p>
+    </div>
+  );
+};
+
+const ToastManager = () => {
+  const [toasts, setToasts] = useState([]);
+
+  useEffect(() => {
+    const showToast = () => {
+      const msg = toastMessages[Math.floor(Math.random() * toastMessages.length)];
+      const id = Date.now();
+      setToasts(prev => [...prev, { ...msg, id }]);
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }, 4000);
+    };
+
+    const delay = setTimeout(() => {
+      showToast();
+      const interval = setInterval(showToast, 8000);
+      return () => clearInterval(interval);
+    }, 3000);
+
+    return () => clearTimeout(delay);
+  }, []);
+
+  return (
+    <div className="lp-toasts">
+      <AnimatePresence>
+        {toasts.map(toast => (
+          <motion.div
+            key={toast.id}
+            className="lp-toast"
+            initial={{ opacity: 0, x: -60, scale: 0.92 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -60, scale: 0.92 }}
+            transition={{ duration: 0.35, ease: [0.22, 0.9, 0.36, 1] }}
+          >
+            <div className="lp-toast__avatar">
+              {toast.name.charAt(0)}
+            </div>
+            <div className="lp-toast__body">
+              <p className="lp-toast__name">{toast.name}</p>
+              <p className="lp-toast__action">{toast.action}</p>
+            </div>
+            <div className="lp-toast__dot" />
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const CursorGlow = () => {
+  const glowRef = useRef(null);
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!glowRef.current) return;
+      glowRef.current.style.left = `${e.clientX}px`;
+      glowRef.current.style.top = `${e.clientY}px`;
+    };
+    window.addEventListener('mousemove', onMove);
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
+
+  return <div ref={glowRef} className="lp-cursor-glow" />;
+};
+
+const FAQItem = ({ question, answer, isOpen, onToggle }) => (
+  <div className={`lp-faq__item ${isOpen ? 'lp-faq__item--open' : ''}`}>
+    <button className="lp-faq__question" onClick={onToggle}>
+      <span>{question}</span>
+      <div className="lp-faq__icon">
+        <FontAwesomeIcon icon={isOpen ? faMinus : faPlus} />
+      </div>
+    </button>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="lp-faq__answer"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 0.9, 0.36, 1] }}
+        >
+          <p>{answer}</p>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
+
+const StickySteps = () => {
+  const containerRef = useRef(null);
+  const [activeStep, setActiveStep] = useState(0);
+  const inView = useInView(containerRef, { once: false, margin: '-40% 0px -40% 0px' });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const total = containerRef.current.offsetHeight;
+      const scrolled = -rect.top;
+      const progress = Math.max(0, Math.min(1, scrolled / (total - window.innerHeight)));
+      setActiveStep(Math.min(stepsData.length - 1, Math.floor(progress * stepsData.length)));
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="lp-sticky-steps">
+      <div className="lp-sticky-steps__sticky">
+        <div className="lp-sticky-steps__left">
+          <RevealSection>
+            <p className="lp-tag lp-tag--green">How It Works</p>
+            <h2 className="lp-heading lp-heading--dark">
+              Set up in minutes.<br />Sell 24/7.
+            </h2>
+            <p className="lp-steps__sub lp-steps__sub--dark">
+              From connecting your WhatsApp to receiving your first automated
+              order — everything is built for busy restaurant owners.
+            </p>
+          </RevealSection>
+
+          <div className="lp-sticky-steps__nav">
+            {stepsData.map((step, idx) => (
+              <div
+                key={idx}
+                className={`lp-sticky-steps__nav-item ${activeStep === idx ? 'lp-sticky-steps__nav-item--active' : ''}`}
+              >
+                <div className="lp-sticky-steps__nav-line" />
+                <span className="lp-sticky-steps__nav-num">{step.number}</span>
+                <span className="lp-sticky-steps__nav-label">{step.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="lp-sticky-steps__right">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeStep}
+              className="lp-sticky-steps__card"
+              initial={{ opacity: 0, y: 30, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -30, scale: 0.97 }}
+              transition={{ duration: 0.45, ease: [0.22, 0.9, 0.36, 1] }}
+            >
+              <div className="lp-steps__icon lp-steps__icon--dark" style={{ width: 56, height: 56, fontSize: 26, marginBottom: 20 }}>
+                <FontAwesomeIcon icon={stepsData[activeStep].icon} />
+              </div>
+              <span className="lp-steps__num lp-steps__num--dark" style={{ fontSize: 13, marginBottom: 10, display: 'block' }}>
+                {stepsData[activeStep].number}
+              </span>
+              <h3 className="lp-sticky-steps__card-title">{stepsData[activeStep].title}</h3>
+              <p className="lp-sticky-steps__card-desc">{stepsData[activeStep].description}</p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const LandingPage = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isNavScrolled, setIsNavScrolled] = useState(false);
   const [activeNavItem, setActiveNavItem] = useState('home');
+  const [openFaq, setOpenFaq] = useState(null);
   const [loading, setLoading] = useState(() => {
     const nav = performance.getEntriesByType('navigation')[0];
     if (nav?.type === 'reload') return true;
     return !sessionStorage.getItem('splashShown');
   });
   const menuRef = useRef(null);
+  const heroRef = useRef(null);
+
+  const { scrollY } = useScroll();
+  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
+  const heroScale = useTransform(scrollY, [0, 400], [1, 0.96]);
 
   const {
     chatMessages, inputMessage, setInputMessage,
@@ -281,6 +544,9 @@ const LandingPage = () => {
 
   return (
     <div className="lp-app lp-app--dark">
+      <CursorGlow />
+      <ToastManager />
+
       <AnimatePresence>
         {loading && (
           <motion.div
@@ -295,7 +561,7 @@ const LandingPage = () => {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
-              <motion.img src={logoImg} alt="Servra" className="lp-preloader__logo" />
+              <motion.img src={brandImg} alt="Servra" className="lp-preloader__logo" />
               <motion.p
                 className="lp-preloader__version"
                 initial={{ opacity: 0 }}
@@ -386,9 +652,13 @@ const LandingPage = () => {
         </AnimatePresence>
       </nav>
 
-      <section id="home" className="lp-hero lp-hero--dark" style={{ position: 'relative', overflow: 'hidden' }}>
+      <motion.section
+        id="home"
+        ref={heroRef}
+        className="lp-hero lp-hero--dark"
+        style={{ position: 'relative', overflow: 'hidden', opacity: heroOpacity, scale: heroScale }}
+      >
         <ParticleCanvas />
-
         <div className="lp-hero__orb lp-hero__orb--1" />
         <div className="lp-hero__orb lp-hero__orb--2" />
 
@@ -436,17 +706,11 @@ const LandingPage = () => {
               animate="show"
               custom={0.5}
             >
-              <button
-                onClick={() => navigate('/waitlist')}
-                className="lp-btn lp-btn--wa"
-              >
+              <button onClick={() => navigate('/waitlist')} className="lp-btn lp-btn--wa lp-btn--ripple">
                 <FontAwesomeIcon icon={faWhatsapp} />
                 Start Automating Orders
               </button>
-              <button
-                onClick={() => scrollToSection('how-it-works')}
-                className="lp-btn lp-btn--ghost"
-              >
+              <button onClick={() => scrollToSection('how-it-works')} className="lp-btn lp-btn--ghost">
                 See how it works <FontAwesomeIcon icon={faArrowRight} className="lp-icon--xs" />
               </button>
             </motion.div>
@@ -459,14 +723,7 @@ const LandingPage = () => {
               custom={0.64}
             >
               {statsData.map((stat) => (
-                <motion.div
-                  key={stat.label}
-                  className="lp-stats__item"
-                  variants={fadeUp}
-                >
-                  <p className="lp-stats__value">{stat.value}</p>
-                  <p className="lp-stats__label">{stat.label}</p>
-                </motion.div>
+                <CounterStat key={stat.label} value={stat.value} label={stat.label} />
               ))}
             </motion.div>
           </div>
@@ -490,9 +747,11 @@ const LandingPage = () => {
             />
           </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      <section id="about" className="lp-about lp-about--dark">
+      <MarqueeStrip />
+
+      <section id="about" className="lp-about lp-about--dark lp-about--overlap">
         <div className="lp-about__container">
           <RevealSection className="lp-about__visual">
             <div className="lp-about__cards-stack">
@@ -548,63 +807,26 @@ const LandingPage = () => {
           viewport={{ once: true, margin: '-60px' }}
         >
           {featuresList.map((feature, idx) => (
-            <motion.div
+            <TiltCard
               key={idx}
               className="lp-features__card lp-features__card--dark"
-              variants={cardVariant}
-              whileHover={{ y: -6, borderColor: 'rgba(37,211,102,0.3)' }}
-              transition={{ duration: 0.25 }}
             >
-              <div className="lp-features__icon lp-features__icon--dark">
-                <FontAwesomeIcon icon={feature.icon} />
-              </div>
-              <p className="lp-features__title">{feature.title}</p>
-              <p className="lp-features__desc lp-features__desc--dark">{feature.description}</p>
-            </motion.div>
+              <motion.div variants={cardVariant}>
+                <div className="lp-features__icon lp-features__icon--dark">
+                  <FontAwesomeIcon icon={feature.icon} />
+                </div>
+                <p className="lp-features__title">{feature.title}</p>
+                <p className="lp-features__desc lp-features__desc--dark">{feature.description}</p>
+              </motion.div>
+            </TiltCard>
           ))}
         </motion.div>
       </section>
 
       <section id="how-it-works" className="lp-steps lp-steps--dark">
-        <div className="lp-steps__container">
-          <RevealSection className="lp-steps__header">
-            <p className="lp-tag lp-tag--green">How It Works</p>
-            <h2 className="lp-heading lp-heading--dark">
-              Set up in minutes.<br />Sell 24/7.
-            </h2>
-            <p className="lp-steps__sub lp-steps__sub--dark">
-              From connecting your WhatsApp to receiving your first automated
-              order — everything is built for busy restaurant owners.
-            </p>
-          </RevealSection>
-
-          <motion.div
-            className="lp-steps__grid"
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-60px' }}
-          >
-            {stepsData.map((step, idx) => (
-              <motion.div
-                key={idx}
-                className="lp-steps__card lp-steps__card--dark"
-                variants={cardVariant}
-                whileHover={{ y: -6, borderColor: 'rgba(37,211,102,0.3)' }}
-              >
-                <div className="lp-steps__card-top">
-                  <div className="lp-steps__icon lp-steps__icon--dark">
-                    <FontAwesomeIcon icon={step.icon} />
-                  </div>
-                  <span className="lp-steps__num lp-steps__num--dark">{step.number}</span>
-                </div>
-                <p className="lp-steps__title">{step.title}</p>
-                <p className="lp-steps__desc lp-steps__desc--dark">{step.description}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+        <StickySteps />
       </section>
+
 
       <section id="pricing" className="lp-pricing lp-pricing--dark">
         <div className="lp-pricing__container">
@@ -624,47 +846,67 @@ const LandingPage = () => {
             viewport={{ once: true, margin: '-60px' }}
           >
             {pricingPlans.map((plan, idx) => (
-              <motion.div
+              <TiltCard
                 key={idx}
                 className={`lp-pricing__card lp-pricing__card--dark ${plan.popular ? 'lp-pricing__card--popular' : ''}`}
-                variants={cardVariant}
-                whileHover={{ y: -8 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
               >
-                {plan.popular && (
-                  <span className="lp-pricing__badge lp-pricing__badge--dark">Most Popular</span>
-                )}
-                <p className="lp-pricing__name">{plan.name}</p>
-                <div className="lp-pricing__price-row">
-                  <span className="lp-pricing__price">{plan.price}</span>
-                  <span className="lp-pricing__period">{plan.period}</span>
-                </div>
-                <div className="lp-pricing__meta">
-                  <span>
-                    <strong>{plan.orders}</strong> orders/mo
-                    {plan.overage && (
-                      <small className="lp-pricing__overage">{plan.overage}</small>
-                    )}
-                  </span>
-                  {plan.staff && <span><strong>{plan.staff}</strong> staff</span>}
-                </div>
-                <ul className="lp-pricing__features lp-pricing__features--dark">
-                  {plan.features.map((feat, i) => (
-                    <li key={i}>
-                      <span className="lp-pricing__check">✓</span>
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => navigate('/waitlist')}
-                  className={`lp-btn lp-btn--full ${plan.popular ? 'lp-btn--wa' : 'lp-btn--ghost'}`}
-                >
-                  Join Waitlist
-                </button>
-              </motion.div>
+                <motion.div variants={cardVariant}>
+                  {plan.popular && (
+                    <span className="lp-pricing__badge lp-pricing__badge--dark">Most Popular</span>
+                  )}
+                  <p className="lp-pricing__name">{plan.name}</p>
+                  <div className="lp-pricing__price-row">
+                    <span className="lp-pricing__price">{plan.price}</span>
+                    <span className="lp-pricing__period">{plan.period}</span>
+                  </div>
+                  <div className="lp-pricing__meta">
+                    <span>
+                      <strong>{plan.orders}</strong> orders/mo
+                      {plan.overage && (
+                        <small className="lp-pricing__overage">{plan.overage}</small>
+                      )}
+                    </span>
+                    {plan.staff && <span><strong>{plan.staff}</strong> staff</span>}
+                  </div>
+                  <ul className="lp-pricing__features lp-pricing__features--dark">
+                    {plan.features.map((feat, i) => (
+                      <li key={i}>
+                        <span className="lp-pricing__check">✓</span>
+                        {feat}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => navigate('/waitlist')}
+                    className={`lp-btn lp-btn--full lp-btn--ripple ${plan.popular ? 'lp-btn--wa' : 'lp-btn--ghost'}`}
+                  >
+                    Join Waitlist
+                  </button>
+                </motion.div>
+              </TiltCard>
             ))}
           </motion.div>
+        </div>
+      </section>
+
+      <section className="lp-faq lp-faq--dark">
+        <div className="lp-faq__container">
+          <RevealSection className="lp-faq__header">
+            <p className="lp-tag lp-tag--green">FAQ</p>
+            <h2 className="lp-heading lp-heading--dark">Questions? Answered.</h2>
+          </RevealSection>
+
+          <div className="lp-faq__list">
+            {faqData.map((item, idx) => (
+              <FAQItem
+                key={idx}
+                question={item.question}
+                answer={item.answer}
+                isOpen={openFaq === idx}
+                onToggle={() => setOpenFaq(openFaq === idx ? null : idx)}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -685,7 +927,7 @@ const LandingPage = () => {
           </p>
           <button
             onClick={() => navigate('/waitlist')}
-            className="lp-btn lp-btn--wa lp-btn--lg"
+            className="lp-btn lp-btn--wa lp-btn--lg lp-btn--ripple"
           >
             <FontAwesomeIcon icon={faWhatsapp} className="lp-icon--md" />
             Join the Waitlist

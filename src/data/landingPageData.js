@@ -43,3 +43,59 @@ export const statsData = [
   { value: '0', label: 'Missed Sales' },
   { value: '1', label: 'Platform — WhatsApp' },
 ];
+
+// export const testimonialsData = [
+//   {
+//     name: '',
+//     role: '',
+//     text: '',
+//     avatar: '',
+//   },
+// ];
+
+export const faqData = [
+  {
+    question: 'Do my customers need to download anything?',
+    answer: 'No. Your customers order directly through WhatsApp which they already have. There is nothing to download, no account to create, no friction at all.',
+  },
+  {
+    question: 'How long does setup take?',
+    answer: 'Most vendors are live in under 5 minutes. You connect your WhatsApp number, upload your menu, and you are ready to take automated orders.',
+  },
+  {
+    question: 'What happens when I reach my order limit?',
+    answer: 'On Starter and Growth plans, orders above the monthly limit are charged at ₦10 each. You will never be cut off mid-month — we just add the overage to your next invoice.',
+  },
+  {
+    question: 'Can I manage multiple locations?',
+    answer: 'Yes, on the Pro plan you can connect multiple WhatsApp numbers and manage all locations from one dashboard with separate menus and analytics per location.',
+  },
+  {
+    question: 'Is my WhatsApp account safe?',
+    answer: 'Yes. Servra uses the official WhatsApp Business API. Your number remains yours and you stay in full control at all times.',
+  },
+  {
+    question: 'What if a customer wants to speak to a human?',
+    answer: 'If a customer sends a message the bot cannot handle, it flags the conversation and notifies you immediately so you can step in manually.',
+  },
+];
+
+export const marqueeItems = [
+  'Zero Missed Orders',
+  'WhatsApp Native',
+  '24/7 Automated',
+  'No Extra Apps',
+  'Instant Confirmations',
+  'Live Analytics',
+  'Delivery Tracking',
+  'Multi-Location Ready',
+];
+
+export const toastMessages = [
+  { name: 'Tunde from Lagos', action: 'just joined the waitlist' },
+  { name: 'Ngozi from Abuja', action: 'just joined the waitlist' },
+  { name: 'Emeka from Port Harcourt', action: 'just joined the waitlist' },
+  { name: 'Aisha from Kano', action: 'just joined the waitlist' },
+  { name: 'Biodun from Ibadan', action: 'just joined the waitlist' },
+  { name: 'Chiamaka from Enugu', action: 'just joined the waitlist' },
+];
