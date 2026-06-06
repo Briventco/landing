@@ -33,22 +33,22 @@ import brandImg from '/images/brand.jpg';
 import './LandingPage.css';
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
+  hidden: { opacity: 0, y: 16 },
   show: (delay = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.65, ease: [0.22, 0.9, 0.36, 1], delay },
+    transition: { duration: 0.35, ease: [0.22, 0.9, 0.36, 1], delay },
   }),
 };
 
 const staggerContainer = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.12 } },
+  show: { transition: { staggerChildren: 0.07 } },
 };
 
 const cardVariant = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 0.9, 0.36, 1] } },
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.22, 0.9, 0.36, 1] } },
 };
 
 const slideInRight = {
@@ -63,7 +63,7 @@ const slideInRight = {
 
 const RevealSection = ({ children, className, style, delay = 0 }) => {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: '-80px' });
+  const inView = useInView(ref, { once: true, margin: '-40px' });
   return (
     <motion.div
       ref={ref}
@@ -385,78 +385,45 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => (
   </div>
 );
 
-const StickySteps = () => {
-  const containerRef = useRef(null);
-  const [activeStep, setActiveStep] = useState(0);
-  const inView = useInView(containerRef, { once: false, margin: '-40% 0px -40% 0px' });
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const total = containerRef.current.offsetHeight;
-      const scrolled = -rect.top;
-      const progress = Math.max(0, Math.min(1, scrolled / (total - window.innerHeight)));
-      setActiveStep(Math.min(stepsData.length - 1, Math.floor(progress * stepsData.length)));
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  return (
-    <div ref={containerRef} className="lp-sticky-steps">
-      <div className="lp-sticky-steps__sticky">
-        <div className="lp-sticky-steps__left">
-          <RevealSection>
-            <p className="lp-tag lp-tag--green">How It Works</p>
-            <h2 className="lp-heading lp-heading--dark">
-              Set up in minutes.<br />Sell 24/7.
-            </h2>
-            <p className="lp-steps__sub lp-steps__sub--dark">
-              From connecting your WhatsApp to receiving your first automated
-              order — everything is built for busy restaurant owners.
-            </p>
-          </RevealSection>
-
-          <div className="lp-sticky-steps__nav">
-            {stepsData.map((step, idx) => (
-              <div
-                key={idx}
-                className={`lp-sticky-steps__nav-item ${activeStep === idx ? 'lp-sticky-steps__nav-item--active' : ''}`}
-              >
-                <div className="lp-sticky-steps__nav-line" />
-                <span className="lp-sticky-steps__nav-num">{step.number}</span>
-                <span className="lp-sticky-steps__nav-label">{step.title}</span>
-              </div>
-            ))}
+const StepsGrid = () => (
+  <div className="lp-steps__container">
+    <RevealSection className="lp-steps__header">
+      <p className="lp-tag lp-tag--green">How It Works</p>
+      <h2 className="lp-heading lp-heading--dark">
+        Set up in minutes.<br />Sell 24/7.
+      </h2>
+      <p className="lp-steps__sub lp-steps__sub--dark">
+        From connecting your WhatsApp to receiving your first automated
+        order — everything is built for busy restaurant owners.
+      </p>
+    </RevealSection>
+    <motion.div
+      className="lp-steps__grid"
+      variants={staggerContainer}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-40px' }}
+    >
+      {stepsData.map((step, idx) => (
+        <motion.div
+          key={idx}
+          className="lp-steps__card lp-steps__card--dark"
+          variants={cardVariant}
+          whileHover={{ y: -4, borderColor: 'rgba(37,211,102,0.3)' }}
+        >
+          <div className="lp-steps__card-top">
+            <div className="lp-steps__icon lp-steps__icon--dark">
+              <FontAwesomeIcon icon={step.icon} />
+            </div>
+            <span className="lp-steps__num lp-steps__num--dark">{step.number}</span>
           </div>
-        </div>
-
-        <div className="lp-sticky-steps__right">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeStep}
-              className="lp-sticky-steps__card"
-              initial={{ opacity: 0, y: 30, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -30, scale: 0.97 }}
-              transition={{ duration: 0.45, ease: [0.22, 0.9, 0.36, 1] }}
-            >
-              <div className="lp-steps__icon lp-steps__icon--dark" style={{ width: 56, height: 56, fontSize: 26, marginBottom: 20 }}>
-                <FontAwesomeIcon icon={stepsData[activeStep].icon} />
-              </div>
-              <span className="lp-steps__num lp-steps__num--dark" style={{ fontSize: 13, marginBottom: 10, display: 'block' }}>
-                {stepsData[activeStep].number}
-              </span>
-              <h3 className="lp-sticky-steps__card-title">{stepsData[activeStep].title}</h3>
-              <p className="lp-sticky-steps__card-desc">{stepsData[activeStep].description}</p>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-    </div>
-  );
-};
+          <p className="lp-steps__title">{step.title}</p>
+          <p className="lp-steps__desc lp-steps__desc--dark">{step.description}</p>
+        </motion.div>
+      ))}
+    </motion.div>
+  </div>
+);
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -824,7 +791,7 @@ const LandingPage = () => {
       </section>
 
       <section id="how-it-works" className="lp-steps lp-steps--dark">
-        <StickySteps />
+        <StepsGrid />
       </section>
 
 
